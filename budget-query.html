@@ -1,0 +1,2175 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="中央政府總預算歲出計畫查詢原型">
+  <title>預算好好查｜中央政府總預算</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172f36;
+      --muted: #587078;
+      --line: #d7e3df;
+      --paper: #ffffff;
+      --canvas: #f3f7f4;
+      --green: #176b55;
+      --green-dark: #10513f;
+      --mint: #e5f2eb;
+      --gold: #f5c66a;
+      --shadow: 0 16px 44px rgb(23 47 54 / 9%);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 86% 0%, rgb(213 235 220 / 70%), transparent 34rem),
+        var(--canvas);
+      line-height: 1.6;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button,
+    a,
+    input,
+    select {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page-shell {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 82px;
+      border-bottom: 1px solid rgb(23 47 54 / 10%);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 14px;
+      color: #fff;
+      background: var(--green);
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .brand-copy {
+      display: grid;
+      line-height: 1.25;
+    }
+
+    .brand-copy strong {
+      font-size: 16px;
+      letter-spacing: .04em;
+    }
+
+    .brand-copy span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .prototype-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 11px;
+      border: 1px solid #e6d39e;
+      border-radius: 999px;
+      color: #72551b;
+      background: #fff9e8;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .prototype-badge::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #c58b1f;
+      content: "";
+    }
+
+    main {
+      padding: 62px 0 76px;
+    }
+
+    .intro {
+      max-width: 720px;
+      margin: 0 auto 30px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .1em;
+    }
+
+    .eyebrow::before,
+    .eyebrow::after {
+      width: 18px;
+      height: 1px;
+      background: #8db9a5;
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 48px);
+      line-height: 1.25;
+      letter-spacing: .015em;
+    }
+
+    .intro p {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .search-card {
+      padding: clamp(22px, 4vw, 38px);
+      border: 1px solid rgb(215 227 223 / 85%);
+      border-radius: 24px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .search-card-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 26px;
+    }
+
+    .search-card-heading h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .search-card-heading p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .year-note {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 8px;
+      color: var(--green-dark);
+      background: var(--mint);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px 18px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .field label {
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 13px;
+      border: 1px solid #cbd9d5;
+      border-radius: 10px;
+      outline: none;
+      color: var(--ink);
+      background: #fff;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .field input::placeholder {
+      color: #899a9c;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgb(23 107 85 / 13%);
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 24px;
+      padding-top: 22px;
+      border-top: 1px solid #e8efec;
+    }
+
+    .quick-searches {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .quick-searches span {
+      margin-right: 2px;
+    }
+
+    .quick-searches button {
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--green-dark);
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .quick-searches button:hover {
+      border-color: #8db9a5;
+      background: #f1f8f4;
+    }
+
+    .actions {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 10px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 18px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 750;
+      transition: background .15s ease, transform .15s ease;
+    }
+
+    .button:active {
+      transform: translateY(1px);
+    }
+
+    .button-primary {
+      color: #fff;
+      background: var(--green);
+    }
+
+    .button-primary:hover {
+      background: var(--green-dark);
+    }
+
+    .button:disabled {
+      cursor: wait;
+      opacity: .7;
+    }
+
+    .button-secondary {
+      border-color: var(--line);
+      color: var(--muted);
+      background: #fff;
+    }
+
+    .button-secondary:hover {
+      background: #f6f9f7;
+    }
+
+    .results {
+      margin-top: 28px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      border-bottom: 1px solid #e8efec;
+    }
+
+    .results-header h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .results-count {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .notice {
+      display: flex;
+      gap: 12px;
+      margin: 20px 22px;
+      padding: 14px 16px;
+      border: 1px solid #e9d8a8;
+      border-radius: 12px;
+      color: #624f24;
+      background: #fffaf0;
+      font-size: 13px;
+    }
+
+    .notice-icon {
+      flex: 0 0 auto;
+      display: grid;
+      width: 22px;
+      height: 22px;
+      place-items: center;
+      border-radius: 50%;
+      color: #fff;
+      background: #a97a22;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .notice strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .notice p {
+      margin: 0;
+    }
+
+    .empty-state {
+      padding: 26px 22px 32px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .empty-icon {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 10px;
+      place-items: center;
+      border-radius: 16px;
+      color: var(--green);
+      background: var(--mint);
+      font-size: 23px;
+    }
+
+    .empty-state strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    .empty-state p {
+      margin: 0;
+    }
+
+    .results-table-wrap {
+      overflow-x: auto;
+    }
+
+    .results-table {
+      width: 100%;
+      min-width: 0;
+      border-collapse: collapse;
+      table-layout: fixed;
+      text-align: left;
+    }
+
+    .results-table .agency-column {
+      width: 11em;
+    }
+
+    .results-table .plan-column {
+      width: 11em;
+    }
+
+    .results-table .item-column {
+      width: 11em;
+    }
+
+    .results-table .description-column {
+      width: auto;
+    }
+
+    .results-table .amount-column {
+      width: 9em;
+    }
+
+    .results-table th,
+    .results-table td {
+      padding: 13px 8px;
+      border-bottom: 1px solid #e8efec;
+      font-size: 13px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .results-table th {
+      color: var(--muted);
+      background: #f7faf8;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .results-table td.description-cell {
+      max-width: none;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 700px) {
+      .results-table .agency-column {
+        width: 19%;
+      }
+
+      .results-table .plan-column {
+        width: 19%;
+      }
+
+      .results-table .item-column {
+        width: 19%;
+      }
+
+      .results-table .description-column {
+        width: 28%;
+      }
+
+      .results-table .amount-column {
+        width: 15%;
+      }
+
+      .results-table th,
+      .results-table td {
+        padding: 10px 5px;
+        font-size: 12px;
+      }
+    }
+
+    .description-preview {
+      max-height: 8rem;
+      margin: 0 0 8px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .description-button {
+      padding: 0;
+      border: 0;
+      color: var(--green);
+      background: transparent;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .description-dialog.commissioned-dialog {
+      width: min(1120px, calc(100% - 32px));
+    }
+
+    .description-dialog {
+      width: min(680px, calc(100% - 32px));
+      max-height: min(80vh, 720px);
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      color: var(--ink);
+      box-shadow: var(--shadow);
+    }
+
+    .description-dialog::backdrop {
+      background: rgb(23 47 54 / 55%);
+    }
+
+    .description-dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      border-bottom: 1px solid #e8efec;
+    }
+
+    .description-dialog-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .description-dialog-content {
+      max-height: calc(80vh - 90px);
+      margin: 0;
+      padding: 20px 22px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .description-dialog-content.commissioned-content {
+      white-space: normal;
+    }
+
+    .commissioned-analysis-note {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .commissioned-unmatched {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .commissioned-project-preview {
+      display: grid;
+      gap: 2px;
+      margin: 8px 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .commissioned-analysis-table-wrap {
+      max-height: calc(80vh - 150px);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .commissioned-analysis-table {
+      width: 100%;
+      min-width: 1120px;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .commissioned-analysis-table th,
+    .commissioned-analysis-table td {
+      padding: 9px 11px;
+      border-bottom: 1px solid #e8efec;
+      font-size: 12px;
+      vertical-align: top;
+    }
+
+    .commissioned-analysis-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      color: var(--muted);
+      background: #f7faf8;
+      white-space: nowrap;
+    }
+
+    .commissioned-analysis-table .commissioned-label {
+      min-width: 210px;
+      white-space: pre-wrap;
+    }
+
+    .commissioned-analysis-table .commissioned-row-type {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .commissioned-analysis-table .commissioned-content-cell {
+      min-width: 300px;
+      max-width: 440px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .commissioned-analysis-table .commissioned-amount {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .search-highlight {
+      padding: 0 .08em;
+      border-radius: 3px;
+      color: var(--ink);
+      background: #ffe08a;
+    }
+
+    .results-table td:last-child,
+    .results-table th:last-child {
+      text-align: right;
+    }
+
+    .integration-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .integration-note a {
+      color: var(--green);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    footer {
+      padding: 22px 0 30px;
+      border-top: 1px solid rgb(23 47 54 / 10%);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    @media (max-width: 700px) {
+      .page-shell {
+        width: min(100% - 28px, 560px);
+      }
+
+      .site-header {
+        min-height: 72px;
+      }
+
+      .prototype-badge {
+        padding: 6px 9px;
+        font-size: 11px;
+      }
+
+      main {
+        padding: 42px 0 52px;
+      }
+
+      .intro {
+        margin-bottom: 24px;
+      }
+
+      .intro p {
+        font-size: 14px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .search-card-heading {
+        margin-bottom: 20px;
+      }
+
+      .form-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+      }
+
+      .button-primary {
+        min-width: 130px;
+      }
+
+      .integration-note,
+      .footer-inner {
+        flex-direction: column;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-shell site-header">
+    <a class="brand" href="#" aria-label="預算好好查首頁">
+      <span class="brand-mark" aria-hidden="true">預</span>
+      <span class="brand-copy">
+        <strong>預算好好查</strong>
+        <span>中央政府總預算・歲出計畫</span>
+      </span>
+    </a>
+    <span class="prototype-badge" id="connection-badge">Supabase 尚未設定</span>
+  </header>
+
+  <main class="page-shell">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">公開預算，簡單查找</p>
+      <h1 id="page-title">政府預算，<br>用你熟悉的方式查</h1>
+      <p>從機關、計畫或支出項目開始，看看預算編列了什麼。</p>
+    </section>
+
+    <section class="search-card" aria-labelledby="search-title">
+      <div class="search-card-heading">
+        <div>
+          <h2 id="search-title">搜尋歲出計畫</h2>
+          <p>可填一項或多項條件；關鍵字也會比對計畫與明細說明。</p>
+        </div>
+        <span class="year-note">民國年度</span>
+      </div>
+
+      <form id="search-form">
+        <div class="form-grid">
+          <div class="field">
+            <label for="fiscal-year">預算年度</label>
+            <select id="fiscal-year" name="fiscal_year">
+              <option value="116" selected>116 年度</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="agency">機關名稱</label>
+            <input id="agency" name="agency" type="search" autocomplete="organization" maxlength="100"
+                   placeholder="例如：行政院、教育部">
+          </div>
+          <div class="field">
+            <label for="plan">計畫名稱或編號</label>
+            <input id="plan" name="plan" type="search" maxlength="100"
+                   placeholder="例如：一般行政">
+          </div>
+          <div class="field">
+            <label for="item">支出項目／關鍵字</label>
+            <input id="item" name="item" type="search" maxlength="100"
+                     placeholder="例如：委辦費、人事費、金門大學">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <div class="quick-searches" aria-label="快速帶入搜尋條件">
+            <span>試試看</span>
+            <button type="button" data-query="委辦費">委辦費</button>
+            <button type="button" data-query="一般行政">一般行政</button>
+            <button type="button" data-query="行政院">行政院</button>
+          </div>
+          <div class="actions">
+            <button class="button button-secondary" id="clear-button" type="reset">清除</button>
+            <button class="button button-primary" type="submit">
+              <span aria-hidden="true">⌕</span>
+              搜尋預算
+            </button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="results" aria-labelledby="results-title" aria-live="polite">
+      <div class="results-header">
+        <h2 id="results-title">查詢結果</h2>
+        <span class="results-count" id="results-count">尚未查詢</span>
+      </div>
+      <div class="notice" role="status">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <div>
+          <strong id="status-title">目前是頁面原型</strong>
+          <p id="status-message">設定 Supabase 專案網址與 publishable key 後，即可查詢已發布的預算資料。</p>
+        </div>
+      </div>
+      <div class="empty-state" id="empty-state">
+        <span class="empty-icon" aria-hidden="true">⌕</span>
+        <strong id="empty-title">準備好開始查詢</strong>
+        <p id="empty-copy">輸入機關、計畫或支出項目，送出後會在此顯示查詢結果。</p>
+      </div>
+      <div class="results-table-wrap" id="results-table-wrap" hidden>
+        <table class="results-table">
+          <colgroup>
+            <col class="agency-column">
+            <col class="plan-column">
+            <col class="item-column">
+            <col class="description-column">
+            <col class="amount-column">
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">機關</th>
+              <th scope="col">計畫</th>
+              <th scope="col">支出項目</th>
+              <th scope="col">說明</th>
+              <th scope="col">預算金額(仟元)</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <dialog class="description-dialog" id="description-dialog" aria-labelledby="description-dialog-title">
+      <div class="description-dialog-header">
+        <h2 id="description-dialog-title">預算說明</h2>
+        <button class="button button-secondary" id="description-dialog-close" type="button">關閉</button>
+      </div>
+      <div class="description-dialog-content" id="description-dialog-content"></div>
+    </dialog>
+
+    <div class="integration-note">
+      <span>金額與單位應依原始預算書表呈現；年度為民國年。</span>
+      <span>
+        <a href="postgresql-schema.sql">資料庫結構</a>
+        · <a href="supabase-setup.sql">Supabase 權限設定</a>
+      </span>
+    </div>
+  </main>
+
+  <footer>
+    <div class="page-shell footer-inner">
+      <span>預算好好查｜介面原型</span>
+      <span>透過 Supabase Data API 查詢；瀏覽器不直接連線 PostgreSQL。</span>
+    </div>
+  </footer>
+
+  <script src="supabase-config.js"></script>
+  <script>
+    const PAGE_SIZE = 500;
+    const MAX_DISPLAY_ROWS = 100;
+    const config = window.BUDGET_SUPABASE_CONFIG || {};
+    const supabaseUrl = String(config.projectUrl || "").replace(/\/+$/, "");
+    const publishableKey = String(config.publishableKey || "").trim();
+    const form = document.querySelector("#search-form");
+    const statusTitle = document.querySelector("#status-title");
+    const statusMessage = document.querySelector("#status-message");
+    const resultsCount = document.querySelector("#results-count");
+    const emptyState = document.querySelector("#empty-state");
+    const emptyTitle = document.querySelector("#empty-title");
+    const emptyCopy = document.querySelector("#empty-copy");
+    const resultsTable = document.querySelector("#results-table-wrap");
+    const resultsBody = document.querySelector("#results-body");
+    const descriptionDialog = document.querySelector("#description-dialog");
+    const descriptionDialogTitle = document.querySelector("#description-dialog-title");
+    const descriptionDialogContent = document.querySelector("#description-dialog-content");
+    const submitButton = form.querySelector('button[type="submit"]');
+    let activeController = null;
+    let commissionedController = null;
+
+    function setStatus(title, message) {
+      statusTitle.textContent = title;
+      statusMessage.textContent = message;
+    }
+
+    function showEmpty(title, message) {
+      resultsTable.hidden = true;
+      resultsBody.replaceChildren();
+      emptyState.hidden = false;
+      emptyTitle.textContent = title;
+      emptyCopy.textContent = message;
+    }
+
+    function containsPattern(value) {
+      return `*${value.trim()}*`;
+    }
+
+    function normalizeCommissionedGroupLabel(value, planCode) {
+      let label = String(value || "").normalize("NFKC").trim();
+      label = label.replace(/^\d+\.\s*/, "");
+      const code = String(planCode || "").normalize("NFKC").trim();
+      if (code && label.startsWith(code)) {
+        label = label.slice(code.length);
+      } else if (!code) {
+        label = label.replace(/^\d{7,}\s*/, "");
+      }
+      return label.replace(/\s+/g, " ").trim().toLocaleLowerCase("zh-TW");
+    }
+
+    function isCommissionedExpense(detail) {
+      const expenseName = String(detail.expense_name || "").trim()
+        || String(detail.item_name || "").trim();
+      return expenseName === "委辦費";
+    }
+
+    function normalizeAmount(value) {
+      const source = String(value == null ? "" : value).trim().replace(/,/g, "");
+      const match = source.match(/^([+-]?)(\d+)(?:\.(\d+))?$/);
+      if (!match) {
+        return null;
+      }
+
+      const whole = match[2].replace(/^0+(?=\d)/, "");
+      const fraction = (match[3] || "").replace(/0+$/, "");
+      const sign = match[1] === "-" && (whole !== "0" || fraction) ? "-" : "";
+      return `${sign}${whole}${fraction ? `.${fraction}` : ""}`;
+    }
+
+    function matchingCommissionedProjects(detail, plan, commissionedRows, group) {
+      const budgetAmount = normalizeAmount(
+        detail.amount_text == null || String(detail.amount_text).trim() === ""
+          ? detail.amount
+          : detail.amount_text
+      );
+      if (budgetAmount == null) {
+        return [];
+      }
+
+      const budgetUnit = String(detail.amount_unit || plan.amount_unit || "")
+        .normalize("NFKC")
+        .replace(/\s+/g, "")
+        .trim();
+      return commissionedRows.filter((project) => {
+        if (
+          project.row_type !== "project"
+          || String(project.commissioned_analysis_report_id) !== String(group.commissioned_analysis_report_id)
+          || String(project.parent_source_record_no) !== String(group.source_record_no)
+        ) {
+          return false;
+        }
+        const projectAmount = normalizeAmount(
+          project.total_amount_text == null || String(project.total_amount_text).trim() === ""
+            ? project.total_amount
+            : project.total_amount_text
+        );
+        const projectUnit = String(project.amount_unit || "")
+          .normalize("NFKC")
+          .replace(/\s+/g, "")
+          .trim();
+        return projectAmount === budgetAmount && projectUnit === budgetUnit;
+      }).map((project) => ({
+        label: project.project_label,
+        period: project.project_period_source
+      }));
+    }
+
+    function matchCommissionedGroup(plan, commissionedRows) {
+      const groupRows = commissionedRows.filter((row) => row.row_type === "group");
+      const agencyCode = String(plan.agency_code || "").trim();
+      const codeMatches = agencyCode
+        ? groupRows.filter((group) => String(group.agency_code || "").trim() === agencyCode)
+        : [];
+      const agencyName = String(plan.agency_name || "").normalize("NFKC").trim();
+      const agencyGroups = codeMatches.length > 0
+        ? codeMatches
+        : groupRows.filter((group) =>
+          String(group.agency_name || "").normalize("NFKC").trim() === agencyName
+        );
+
+      if (agencyGroups.length === 0) {
+        return { report: null, message: "尚無已公開的委辦 group，暫未配對" };
+      }
+
+      const planName = normalizeCommissionedGroupLabel(plan.plan_name, plan.plan_code);
+      const matches = agencyGroups.filter((group) =>
+        normalizeCommissionedGroupLabel(group.project_label, plan.plan_code) === planName
+      );
+      if (matches.length === 1) {
+        const group = matches[0];
+        return {
+          report: {
+            fiscalYear: plan.fiscal_year,
+            agencyCode: group.agency_code,
+            agencyName: group.agency_name,
+            reportId: group.commissioned_analysis_report_id,
+            groupRecordNo: group.source_record_no,
+            groupLabel: group.project_label
+          },
+          group,
+          message: ""
+        };
+      }
+      if (matches.length > 1) {
+        return { report: null, message: "同名 group 不只一筆，暫未配對" };
+      }
+      return { report: null, message: `未配對 group：${plan.plan_name}` };
+    }
+
+    async function fetchAllRows(viewName, filters, signal) {
+      const rows = [];
+      let offset = 0;
+
+      while (true) {
+        const url = new URL(`${supabaseUrl}/rest/v1/${viewName}`);
+        const params = new URLSearchParams(filters);
+        params.set("limit", String(PAGE_SIZE));
+        params.set("offset", String(offset));
+        url.search = params.toString();
+
+        const response = await fetch(url, {
+          headers: {
+            apikey: publishableKey,
+            Authorization: `Bearer ${publishableKey}`,
+            "Accept-Profile": "public_budget"
+          },
+          signal
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("HTTP 401：Supabase 未接受 API key。請確認 publishable key 正確，且與專案網址屬於同一個 Supabase 專案。");
+          }
+          if (response.status === 403) {
+            throw new Error("HTTP 403：API 角色缺少讀取權限。請重新執行 supabase-setup.sql，確認唯讀檢視表授權與 RLS policy 已建立。");
+          }
+          if (response.status === 406) {
+            throw new Error("HTTP 406：Supabase API 尚未公開 public_budget schema，或未重新載入 API schema。");
+          }
+          if (response.status === 404) {
+            throw new Error("找不到查詢檢視表，請確認已建立資料表、公開檢視表及 API schema 設定。");
+          }
+          throw new Error(`Supabase 查詢失敗（HTTP ${response.status}）。`);
+        }
+
+        const page = await response.json();
+        if (!Array.isArray(page)) {
+          throw new Error("Supabase 回傳格式不正確，預期取得資料列清單。");
+        }
+        rows.push(...page);
+        if (page.length < PAGE_SIZE) {
+          return rows;
+        }
+        offset += PAGE_SIZE;
+      }
+    }
+
+    function appendHighlightedText(container, value, searchTerms) {
+      container.replaceChildren();
+      const text = value == null || value === "" ? "—" : String(value);
+      const terms = [...new Set(searchTerms.map((term) => term.trim()).filter(Boolean))]
+        .sort((left, right) => right.length - left.length);
+      if (terms.length === 0) {
+        container.textContent = text;
+        return;
+      }
+
+      const pattern = new RegExp(
+        terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
+        "giu"
+      );
+      let cursor = 0;
+      for (const match of text.matchAll(pattern)) {
+        container.append(document.createTextNode(text.slice(cursor, match.index)));
+        const highlight = document.createElement("mark");
+        highlight.className = "search-highlight";
+        highlight.textContent = match[0];
+        container.append(highlight);
+        cursor = match.index + match[0].length;
+      }
+      container.append(document.createTextNode(text.slice(cursor)));
+    }
+
+    function appendCell(row, value, searchTerms) {
+      const cell = document.createElement("td");
+      appendHighlightedText(cell, value, searchTerms);
+      row.append(cell);
+    }
+
+    function formatDefenseDescription(description) {
+      const source = String(description);
+      const hasParagraphMarkup = (parsed) => parsed.body.querySelector("p, ol, ul, li, br") !== null;
+      let parsed = new DOMParser().parseFromString(source, "text/html");
+
+      if (!hasParagraphMarkup(parsed) && /&lt;\/?(?:p|ol|ul|li|br)\b/i.test(source)) {
+        parsed = new DOMParser().parseFromString(parsed.body.textContent || "", "text/html");
+      }
+      if (!hasParagraphMarkup(parsed)) {
+        return parsed.body.textContent || source;
+      }
+
+      const numberStyles = [
+        (number) => `${number}.`,
+        (number) => `(${number})`,
+        (number) => `<${number}>`,
+        (number) => `#${number}`,
+        (number) => `X${number}`,
+        (number) => `Y${number}`
+      ];
+      const lines = [];
+
+      function normalizeText(value) {
+        return value
+          .replace(/\u00a0/g, " ")
+          .split(/\r?\n/)
+          .map((line) => line.replace(/[ \t]+/g, " ").trim())
+          .filter(Boolean)
+          .join("\n");
+      }
+
+      function textWithoutLists(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node.nodeValue || "";
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          return "";
+        }
+
+        const tagName = node.tagName.toLowerCase();
+        if (tagName === "ol" || tagName === "ul") {
+          return "";
+        }
+        if (tagName === "br") {
+          return "\n";
+        }
+        return Array.from(node.childNodes, textWithoutLists).join("");
+      }
+
+      function renderList(list, depth) {
+        const ordered = list.tagName.toLowerCase() === "ol";
+        let nextNumber = Number.parseInt(list.getAttribute("start") || "1", 10);
+        if (!Number.isInteger(nextNumber)) {
+          nextNumber = 1;
+        }
+
+        for (const child of list.children) {
+          const tagName = child.tagName.toLowerCase();
+          if (tagName === "ol" || tagName === "ul") {
+            renderList(child, depth + 1);
+            continue;
+          }
+          if (tagName !== "li") {
+            continue;
+          }
+
+          const explicitNumber = Number.parseInt(child.getAttribute("value") || "", 10);
+          const number = Number.isInteger(explicitNumber) ? explicitNumber : nextNumber;
+          nextNumber = number + 1;
+          const text = normalizeText(textWithoutLists(child));
+          if (text) {
+            const marker = ordered
+              ? numberStyles[depth]?.(number) || String(number)
+              : "•";
+            lines.push(`${"  ".repeat(depth)}${marker} ${text}`);
+          }
+
+          for (const nestedList of child.children) {
+            const nestedTag = nestedList.tagName.toLowerCase();
+            if (nestedTag === "ol" || nestedTag === "ul") {
+              renderList(nestedList, depth + 1);
+            }
+          }
+        }
+      }
+
+      function visit(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = normalizeText(node.nodeValue || "");
+          if (text) {
+            lines.push(text);
+          }
+          return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          return;
+        }
+
+        const tagName = node.tagName.toLowerCase();
+        if (tagName === "ol" || tagName === "ul") {
+          renderList(node, 0);
+          return;
+        }
+        if (tagName === "p") {
+          const text = normalizeText(textWithoutLists(node));
+          if (text) {
+            lines.push(text);
+          }
+          return;
+        }
+        for (const child of node.childNodes) {
+          visit(child);
+        }
+      }
+
+      for (const child of parsed.body.childNodes) {
+        visit(child);
+      }
+      return lines.join("\n\n");
+    }
+
+    function formatPlainDescription(description) {
+      const source = String(description);
+      let parsed = new DOMParser().parseFromString(source, "text/html");
+
+      if (!parsed.body.querySelector("p, ol, ul, li, br") && /&lt;\/?(?:p|ol|ul|li|br)\b/i.test(source)) {
+        parsed = new DOMParser().parseFromString(parsed.body.textContent || "", "text/html");
+      }
+
+      function getText(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node.nodeValue || "";
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          return "";
+        }
+
+        const tagName = node.tagName.toLowerCase();
+        if (tagName === "script" || tagName === "style" || tagName === "template") {
+          return "";
+        }
+        if (tagName === "br") {
+          return "\n";
+        }
+        const content = Array.from(node.childNodes, getText).join("");
+        if (tagName === "li") {
+          return `• ${content.trim()}\n`;
+        }
+        if (["p", "div", "ol", "ul"].includes(tagName)) {
+          return `${content.trim()}\n\n`;
+        }
+        return content;
+      }
+
+      return getText(parsed.body)
+        .replace(/\u00a0/g, " ")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    function getDescriptionText(description, agencyName) {
+      const name = String(agencyName || "");
+      return name.includes("國防部") || name.includes("國防大學") || name.includes("中正國防幹部預備學校")
+        ? formatDefenseDescription(description)
+        : formatPlainDescription(description);
+    }
+
+    function matchingDescriptionLines(content, keyword) {
+      const searchTerm = keyword.toLocaleLowerCase();
+      return [...new Set(content
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line && line.toLocaleLowerCase().includes(searchTerm)))]
+        .join("\n");
+    }
+
+    function appendDescriptionCell(row, description, agencyName, searchTerms, itemKeyword, showFullDescription, commissionedReport, commissionedMessage, commissionedProjects, overseasTrip) {
+      const cell = document.createElement("td");
+      cell.className = "description-cell";
+      const hasDescription = description != null && String(description).trim() !== "";
+      let hasVisibleContent = false;
+
+      if (itemKeyword && hasDescription) {
+        const matchingLines = matchingDescriptionLines(
+          getDescriptionText(description, agencyName),
+          itemKeyword
+        );
+        if (matchingLines) {
+          const preview = document.createElement("p");
+          preview.className = "description-preview";
+          appendHighlightedText(preview, matchingLines, searchTerms);
+          cell.append(preview);
+          hasVisibleContent = true;
+        }
+      }
+
+      if (showFullDescription && hasDescription) {
+        const button = document.createElement("button");
+        button.className = "description-button";
+        button.type = "button";
+        button.textContent = "查看完整說明";
+        button.addEventListener("click", () => {
+          descriptionDialog.classList.remove("commissioned-dialog");
+          descriptionDialogContent.classList.remove("commissioned-content");
+          descriptionDialogTitle.textContent = "預算說明";
+          const content = getDescriptionText(description, agencyName);
+          appendHighlightedText(descriptionDialogContent, content, searchTerms);
+          descriptionDialog.showModal();
+        });
+        cell.append(button);
+        hasVisibleContent = true;
+      }
+
+      for (const project of commissionedProjects || []) {
+        const preview = document.createElement("div");
+        preview.className = "commissioned-project-preview";
+        const planLine = document.createElement("div");
+        const planHeading = document.createElement("strong");
+        planHeading.textContent = "委辦計畫：";
+        const planName = document.createElement("span");
+        planName.textContent = project.label || "未提供名稱";
+        planLine.append(planHeading, planName);
+
+        const periodLine = document.createElement("div");
+        const periodHeading = document.createElement("strong");
+        periodHeading.textContent = "計畫起訖年度：";
+        const period = document.createElement("span");
+        period.textContent = project.period || "未提供";
+        periodLine.append(periodHeading, period);
+        preview.append(planLine, periodLine);
+        cell.append(preview);
+        hasVisibleContent = true;
+      }
+
+      if (commissionedReport || commissionedMessage) {
+        if (hasVisibleContent) {
+          cell.append(document.createElement("br"));
+        }
+        if (commissionedReport) {
+          const button = document.createElement("button");
+          button.className = "description-button";
+          button.type = "button";
+          button.textContent = "查詢完整委辦費";
+          button.setAttribute("aria-haspopup", "dialog");
+          button.addEventListener("click", () => {
+            showCommissionedAnalysis(commissionedReport);
+          });
+          cell.append(button);
+        } else {
+          const message = document.createElement("span");
+          message.className = "commissioned-unmatched";
+          message.textContent = commissionedMessage;
+          cell.append(message);
+        }
+        hasVisibleContent = true;
+      }
+
+      if (overseasTrip) {
+        if (hasVisibleContent) {
+          cell.append(document.createElement("br"));
+        }
+        const button = document.createElement("button");
+        button.className = "description-button";
+        button.type = "button";
+        button.textContent = "查看完整出國計畫";
+        button.setAttribute("aria-haspopup", "dialog");
+        button.addEventListener("click", () => {
+          showOverseasTrips(overseasTrip);
+        });
+        cell.append(button);
+        hasVisibleContent = true;
+      }
+
+      if (!hasVisibleContent) {
+        cell.textContent = "—";
+      }
+      row.append(cell);
+    }
+
+    document.querySelector("#description-dialog-close").addEventListener("click", () => {
+      descriptionDialog.close();
+    });
+
+    descriptionDialog.addEventListener("close", () => {
+      if (commissionedController) {
+        commissionedController.abort();
+        commissionedController = null;
+      }
+    });
+
+    function formatAmountText(amountText, amount) {
+      if (amountText != null && amountText !== "") {
+        const source = String(amountText).trim();
+        const match = source.match(/^([+-]?)(\d+|\d{1,3}(?:,\d{3})+)(\.\d+)?$/);
+        if (!match) {
+          return source;
+        }
+
+        const integer = match[2].replace(/,/g, "");
+        if (!/^\d+$/.test(integer)) {
+          return source;
+        }
+        const groupedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return `${match[1]}${groupedInteger}${match[3] || ""}`;
+      }
+
+      if (amount != null && Number.isFinite(Number(amount))) {
+        return new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 6 }).format(Number(amount));
+      }
+      if (amount == null) {
+        return "0";
+      }
+      return String(amount);
+    }
+
+    function buildFirstLevelItemNames(rows) {
+      const itemNamesById = new Map();
+      let currentPlanId = "";
+      let firstLevelItemName = "";
+
+      for (const row of rows) {
+        const planId = String(row.budget_plan_id);
+        if (planId !== currentPlanId) {
+          currentPlanId = planId;
+          firstLevelItemName = "";
+        }
+
+        const branchPlanName = String(row.branch_plan_name || "").trim();
+        const itemCode = String(row.item_code || "").trim();
+        const itemName = String(row.item_name || "").trim();
+        if (branchPlanName) {
+          firstLevelItemName = branchPlanName;
+        } else if (/^\d{1,2}$/.test(itemCode) && itemName) {
+          firstLevelItemName = itemName;
+        }
+
+        itemNamesById.set(String(row.budget_plan_detail_id), firstLevelItemName);
+      }
+      return itemNamesById;
+    }
+
+    function getBudgetItemDisplayName(detail, firstLevelItemNames) {
+      const firstLevelItemName = String(
+        detail.branch_plan_name
+          || firstLevelItemNames.get(String(detail.budget_plan_detail_id))
+          || ""
+      ).trim();
+      const secondLevelItemName = String(detail.item_name || "").trim();
+      const displayName = [...new Set([
+        firstLevelItemName,
+        secondLevelItemName
+      ].filter(Boolean))].join("/");
+      return displayName
+        || detail.item_label_original
+        || detail.item_code
+        || "支出明細";
+    }
+
+    function renderCommissionedAnalysis(rows, report) {
+      descriptionDialogContent.replaceChildren();
+
+      const note = document.createElement("p");
+      note.className = "commissioned-analysis-note";
+      note.textContent = `配對 group：${report.groupLabel}；共 ${rows.length.toLocaleString("zh-TW")} 筆來源列；金額單位：${report.amountUnit || "來源未標示"}。分類列金額可能包含下層明細，請勿重複加總。`;
+      descriptionDialogContent.append(note);
+
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "commissioned-analysis-table-wrap";
+      const table = document.createElement("table");
+      table.className = "commissioned-analysis-table";
+      const header = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      const columns = [
+        "委辦計畫",
+        "計畫起訖年度",
+        "委辦內容",
+        "用人費用",
+        "業務費用",
+        "經常門其他",
+        "設備購置",
+        "資本門其他",
+        "合計"
+      ];
+      for (const column of columns) {
+        const cell = document.createElement("th");
+        cell.scope = "col";
+        cell.textContent = column;
+        headerRow.append(cell);
+      }
+      header.append(headerRow);
+      table.append(header);
+
+      const body = document.createElement("tbody");
+      const rowTypeLabels = {
+        report_total: "報表合計",
+        group: "分類",
+        project: "委辦計畫",
+        section: "段落",
+        continuation: "續行",
+        other: "其他"
+      };
+      for (const sourceRow of rows) {
+        const tableRow = document.createElement("tr");
+        const labelCell = document.createElement("td");
+        labelCell.className = "commissioned-label";
+        const rowType = document.createElement("small");
+        rowType.className = "commissioned-row-type";
+        rowType.textContent = rowTypeLabels[sourceRow.row_type] || "其他";
+        labelCell.append(rowType);
+        const label = document.createElement("span");
+        label.textContent = sourceRow.project_label || "—";
+        if (sourceRow.parent_source_record_no != null) {
+          label.style.paddingInlineStart = "16px";
+        }
+        labelCell.append(label);
+        tableRow.append(labelCell);
+
+        const periodCell = document.createElement("td");
+        periodCell.textContent = sourceRow.project_period_source || "—";
+        tableRow.append(periodCell);
+
+        const contentCell = document.createElement("td");
+        contentCell.className = "commissioned-content-cell";
+        contentCell.textContent = sourceRow.project_content || "—";
+        tableRow.append(contentCell);
+
+        for (const category of [
+          "personnel",
+          "business",
+          "recurring_other",
+          "equipment",
+          "capital_other",
+          "total"
+        ]) {
+          const amountCell = document.createElement("td");
+          amountCell.className = "commissioned-amount";
+          const amountText = sourceRow[`${category}_amount_text`];
+          const amount = sourceRow[`${category}_amount`];
+          amountCell.textContent = amountText == null && amount == null
+            ? "—"
+            : formatAmountText(amountText, amount);
+          tableRow.append(amountCell);
+        }
+        body.append(tableRow);
+      }
+      table.append(body);
+      tableWrap.append(table);
+      descriptionDialogContent.append(tableWrap);
+    }
+
+    async function showCommissionedAnalysis(report) {
+      if (commissionedController) {
+        commissionedController.abort();
+      }
+      const controller = new AbortController();
+      commissionedController = controller;
+      descriptionDialog.classList.add("commissioned-dialog");
+      descriptionDialogContent.classList.add("commissioned-content");
+      descriptionDialogTitle.textContent = `${report.agencyName}－完整委辦費`;
+      descriptionDialogContent.replaceChildren();
+      const loading = document.createElement("p");
+      loading.textContent = "正在載入委辦經費明細…";
+      descriptionDialogContent.append(loading);
+      if (!descriptionDialog.open) {
+        descriptionDialog.showModal();
+      }
+
+      const filters = {
+        select: "commissioned_analysis_report_id,agency_name,amount_unit,source_record_no,parent_source_record_no,row_type,project_label,project_period_source,project_content,personnel_amount_text,personnel_amount,business_amount_text,business_amount,recurring_other_amount_text,recurring_other_amount,equipment_amount_text,equipment_amount,capital_other_amount_text,capital_other_amount,total_amount_text,total_amount",
+        commissioned_analysis_report_id: `eq.${report.reportId}`,
+        fiscal_year: `eq.${report.fiscalYear}`,
+        order: "source_record_no.asc"
+      };
+
+      try {
+        const rows = await fetchAllRows(
+          "v_public_commissioned_analysis_row",
+          filters,
+          controller.signal
+        );
+        if (controller.signal.aborted) {
+          return;
+        }
+        if (rows.length === 0) {
+          descriptionDialogContent.replaceChildren();
+          const message = document.createElement("p");
+          message.textContent = "查無此 group 的已公開委辦經費明細，請確認資料是否已發布。";
+          descriptionDialogContent.append(message);
+          return;
+        }
+
+        const groupRecordNo = Number(report.groupRecordNo);
+        const group = rows.find((sourceRow) =>
+          sourceRow.row_type === "group" && Number(sourceRow.source_record_no) === groupRecordNo
+        );
+        if (!group) {
+          descriptionDialogContent.replaceChildren();
+          const message = document.createElement("p");
+          message.textContent = "找不到已配對的 group，資料可能已變更，請重新查詢。";
+          descriptionDialogContent.append(message);
+          return;
+        }
+
+        const includedRecordNos = new Set([groupRecordNo]);
+        let addedDescendant = true;
+        while (addedDescendant) {
+          addedDescendant = false;
+          for (const sourceRow of rows) {
+            const parentRecordNo = Number(sourceRow.parent_source_record_no);
+            const sourceRecordNo = Number(sourceRow.source_record_no);
+            if (
+              sourceRow.parent_source_record_no != null
+              && includedRecordNos.has(parentRecordNo)
+              && !includedRecordNos.has(sourceRecordNo)
+            ) {
+              includedRecordNos.add(sourceRecordNo);
+              addedDescendant = true;
+            }
+          }
+        }
+        const groupRows = rows.filter((sourceRow) =>
+          includedRecordNos.has(Number(sourceRow.source_record_no))
+        );
+        descriptionDialogTitle.textContent = `${report.agencyName}－${report.groupLabel} 委辦費`;
+        renderCommissionedAnalysis(groupRows, {
+          groupLabel: report.groupLabel,
+          amountUnit: group.amount_unit || rows[0].amount_unit
+        });
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+        descriptionDialogContent.replaceChildren();
+        const message = document.createElement("p");
+        message.textContent = error.message || "無法載入委辦經費明細，請確認 Supabase 設定與網路連線。";
+        descriptionDialogContent.append(message);
+      } finally {
+        if (commissionedController === controller) {
+          commissionedController = null;
+        }
+      }
+    }
+
+    const OVERSEAS_TRIP_ITEMS = {
+      "國外旅費": ["meeting_negotiation", "inspection_visit", "study_training"],
+      "大陸地區旅費": ["mainland_china"]
+    };
+    const OVERSEAS_TRIP_CATEGORY_LABELS = {
+      meeting_negotiation: "開會、談判",
+      inspection_visit: "考察、視察、訪問",
+      study_training: "進修、研究、實習",
+      mainland_china: "派員赴大陸"
+    };
+    const OVERSEAS_TRIP_FIELDS = [
+      ["destination", "前往國家／地區"],
+      ["purpose_or_agenda", "主要事項／機構"],
+      ["content", "計畫內容"],
+      ["period_text", "預計前往期間"],
+      ["days_text", "預計天數"],
+      ["people_text", "擬派人數"],
+      ["transport_cost_text", "交通費"],
+      ["living_cost_text", "生活費"],
+      ["office_cost_text", "辦公費"],
+      ["ticket_fee_text", "機票與出國手續費"],
+      ["study_fee_text", "書籍學雜等費"],
+      ["total_cost_text", "旅費合計"],
+      ["budget_subject", "歸屬預算科目"],
+      ["prior_visit_flag", "前三年有無赴同一單位"],
+      ["prior_visit_content", "前三年內容"],
+      ["prior_trained_people_text", "前三年度已派人數"]
+    ];
+
+    function overseasTripTarget(detail, plan) {
+      const itemName = String(detail.item_name || "").trim();
+      if (!plan || !Object.hasOwn(OVERSEAS_TRIP_ITEMS, itemName)) {
+        return null;
+      }
+      return {
+        fiscalYear: plan.fiscal_year,
+        agencyCode: plan.agency_code,
+        agencyName: plan.agency_name,
+        planName: plan.plan_name,
+        itemName,
+        categories: OVERSEAS_TRIP_ITEMS[itemName]
+      };
+    }
+
+    function overseasTripMatchesPlan(row, planName) {
+      const subject = String(row.budget_subject || "").normalize("NFKC").replace(/\s+/g, "");
+      const name = String(planName || "").normalize("NFKC").replace(/\s+/g, "");
+      return subject !== "" && name !== "" && (subject.includes(name) || name.includes(subject));
+    }
+
+    function appendOverseasTripDetails(container, row, priorByRow) {
+      for (const [field, label] of OVERSEAS_TRIP_FIELDS) {
+        const value = String(row[field] ?? "").trim();
+        if (!value) {
+          continue;
+        }
+        const line = document.createElement("div");
+        const heading = document.createElement("strong");
+        heading.textContent = `${label}：`;
+        const text = document.createElement("span");
+        text.textContent = value;
+        line.append(heading, text);
+        container.append(line);
+      }
+      for (const prior of priorByRow.get(String(row.overseas_trip_row_id)) || []) {
+        const line = document.createElement("div");
+        const heading = document.createElement("strong");
+        heading.textContent = `最近第 ${prior.sequence_no} 次：`;
+        const text = document.createElement("span");
+        text.textContent = [prior.location_text, prior.period_text, prior.people_text && `${prior.people_text} 人`,
+          prior.cost_text && `國外旅費 ${prior.cost_text}`].filter(Boolean).join("　");
+        line.append(heading, text);
+        container.append(line);
+      }
+    }
+
+    function renderOverseasTrips(rows, priorRows, target) {
+      descriptionDialogContent.replaceChildren();
+      const priorByRow = new Map();
+      for (const prior of priorRows) {
+        const key = String(prior.overseas_trip_row_id);
+        priorByRow.set(key, [...(priorByRow.get(key) || []), prior]);
+      }
+      const planRows = rows.filter((row) => row.row_type === "plan");
+      const matched = planRows.filter((row) => overseasTripMatchesPlan(row, target.planName));
+      let showAll = matched.length === 0;
+
+      const note = document.createElement("p");
+      note.className = "commissioned-analysis-note";
+      const toggle = document.createElement("button");
+      toggle.className = "description-button";
+      toggle.type = "button";
+      const body = document.createElement("div");
+      descriptionDialogContent.append(note);
+      if (matched.length > 0 && matched.length < planRows.length) {
+        descriptionDialogContent.append(toggle);
+      }
+      descriptionDialogContent.append(body);
+
+      const draw = () => {
+        body.replaceChildren();
+        const unit = rows[0]?.amount_unit || "";
+        note.textContent = showAll
+          ? `顯示 ${target.agencyName} 全部出國計畫，共 ${planRows.length} 項。${unit ? `金額單位：${unit}。` : ""}`
+          : `僅顯示歸屬「${target.planName}」的出國計畫，共 ${matched.length} 項。${unit ? `金額單位：${unit}。` : ""}`;
+        toggle.textContent = showAll ? "只看本計畫" : "顯示機關全部出國計畫";
+        for (const category of target.categories) {
+          const categoryRows = rows.filter((row) => row.trip_category === category
+            && (row.row_type === "heading" || showAll || overseasTripMatchesPlan(row, target.planName)));
+          const visiblePlans = categoryRows.filter((row) => row.row_type === "plan");
+          if (visiblePlans.length === 0) {
+            continue;
+          }
+          const title = document.createElement("h3");
+          title.textContent = OVERSEAS_TRIP_CATEGORY_LABELS[category];
+          body.append(title);
+          const wrap = document.createElement("div");
+          wrap.className = "commissioned-analysis-table-wrap";
+          const table = document.createElement("table");
+          table.className = "commissioned-analysis-table";
+          const head = document.createElement("tr");
+          for (const name of ["計畫", "內容"]) {
+            const th = document.createElement("th");
+            th.textContent = name;
+            head.append(th);
+          }
+          const thead = document.createElement("thead");
+          thead.append(head);
+          const tbody = document.createElement("tbody");
+          for (const row of categoryRows) {
+            const tr = document.createElement("tr");
+            if (row.row_type === "heading") {
+              const th = document.createElement("th");
+              th.colSpan = 2;
+              th.textContent = row.plan_name;
+              tr.append(th);
+            } else {
+              const label = document.createElement("td");
+              label.className = "commissioned-label";
+              label.textContent = [row.plan_no, row.plan_name].filter(Boolean).join(" ");
+              const detail = document.createElement("td");
+              detail.className = "commissioned-content-cell";
+              appendOverseasTripDetails(detail, row, priorByRow);
+              tr.append(label, detail);
+            }
+            tbody.append(tr);
+          }
+          table.append(thead, tbody);
+          wrap.append(table);
+          body.append(wrap);
+        }
+        if (!body.hasChildNodes()) {
+          const message = document.createElement("p");
+          message.textContent = "此類別沒有可顯示的出國計畫。";
+          body.append(message);
+        }
+      };
+      toggle.addEventListener("click", () => {
+        showAll = !showAll;
+        draw();
+      });
+      draw();
+    }
+
+    async function showOverseasTrips(target) {
+      if (commissionedController) {
+        commissionedController.abort();
+      }
+      const controller = new AbortController();
+      commissionedController = controller;
+      descriptionDialog.classList.add("commissioned-dialog");
+      descriptionDialogContent.classList.add("commissioned-content");
+      descriptionDialogTitle.textContent = `${target.agencyName}－${target.itemName}（完整出國計畫）`;
+      descriptionDialogContent.replaceChildren();
+      const loading = document.createElement("p");
+      loading.textContent = "正在載入出國計畫…";
+      descriptionDialogContent.append(loading);
+      if (!descriptionDialog.open) {
+        descriptionDialog.showModal();
+      }
+
+      const filters = {
+        select: "overseas_trip_report_id,overseas_trip_row_id,trip_category,amount_unit,source_record_no,row_type,plan_no,plan_name,destination,purpose_or_agenda,content,period_text,days_text,people_text,transport_cost_text,living_cost_text,office_cost_text,ticket_fee_text,study_fee_text,total_cost_text,budget_subject,prior_visit_flag,prior_visit_content,prior_trained_people_text",
+        fiscal_year: `eq.${target.fiscalYear}`,
+        trip_category: `in.(${target.categories.join(",")})`,
+        row_type: "in.(heading,plan)",
+        order: "trip_category.asc,overseas_trip_report_id.asc,source_record_no.asc"
+      };
+      if (target.agencyCode) {
+        filters.agency_code = `eq.${target.agencyCode}`;
+      } else {
+        filters.agency_name = `eq.${target.agencyName}`;
+      }
+
+      try {
+        const rows = await fetchAllRows("v_public_overseas_trip_row", filters, controller.signal);
+        if (controller.signal.aborted) {
+          return;
+        }
+        if (!rows.some((row) => row.row_type === "plan")) {
+          descriptionDialogContent.replaceChildren();
+          const message = document.createElement("p");
+          message.textContent = "查無已公開的出國計畫，請確認資料是否已發布，或該機關未編列此類計畫。";
+          descriptionDialogContent.append(message);
+          return;
+        }
+        const meetingReportIds = [...new Set(rows
+          .filter((row) => row.trip_category === "meeting_negotiation")
+          .map((row) => row.overseas_trip_report_id))];
+        const priorRows = meetingReportIds.length === 0 ? [] : await fetchAllRows(
+          "v_public_overseas_trip_prior_execution",
+          {
+            select: "overseas_trip_row_id,sequence_no,location_text,period_text,people_text,cost_text",
+            overseas_trip_report_id: `in.(${meetingReportIds.join(",")})`,
+            order: "overseas_trip_row_id.asc,sequence_no.asc"
+          },
+          controller.signal
+        );
+        if (controller.signal.aborted) {
+          return;
+        }
+        renderOverseasTrips(rows, priorRows, target);
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+        descriptionDialogContent.replaceChildren();
+        const message = document.createElement("p");
+        message.textContent = error.message || "無法載入出國計畫，請確認 Supabase 設定與網路連線。";
+        descriptionDialogContent.append(message);
+      } finally {
+        if (commissionedController === controller) {
+          commissionedController = null;
+        }
+      }
+    }
+
+    function renderRows(rows, totalCount, searchTerms, itemKeyword) {
+      resultsBody.replaceChildren();
+      const visibleRows = rows.slice(0, MAX_DISPLAY_ROWS);
+
+      for (const result of visibleRows) {
+        const row = document.createElement("tr");
+        appendCell(row, result.agency_name, searchTerms);
+        appendCell(row, result.plan_name, searchTerms);
+        appendCell(row, result.item_name || "計畫總額", searchTerms);
+        appendDescriptionCell(
+          row,
+          result.description,
+          result.agency_name,
+          searchTerms,
+          itemKeyword,
+          result.showFullDescription,
+          result.commissionedReport,
+          result.commissionedMessage,
+          result.commissionedProjects,
+          result.overseasTrip
+        );
+        appendCell(row, formatAmountText(result.amount_text, result.amount), searchTerms);
+        resultsBody.append(row);
+      }
+
+      if (visibleRows.length === 0) {
+        showEmpty("沒有符合的資料", "請調整關鍵字或確認該年度已有發布的預算資料。");
+      } else {
+        emptyState.hidden = true;
+        resultsTable.hidden = false;
+      }
+
+      resultsCount.textContent = totalCount > MAX_DISPLAY_ROWS
+        ? `共 ${totalCount.toLocaleString("zh-TW")} 筆，顯示前 ${MAX_DISPLAY_ROWS} 筆`
+        : `共 ${totalCount.toLocaleString("zh-TW")} 筆`;
+    }
+
+    async function searchBudget(filters, signal) {
+      const planFilters = {
+        select: "budget_plan_id,fiscal_year,agency_code,agency_name,plan_code,plan_name,amount_text,amount,amount_unit",
+        fiscal_year: `eq.${filters.year}`,
+        order: "agency_name.asc,plan_name.asc"
+      };
+      if (filters.agency) {
+        planFilters.agency_name = `ilike.${containsPattern(filters.agency)}`;
+      }
+
+      const plans = await fetchAllRows("v_public_budget_plan", planFilters, signal);
+      const planTerm = filters.plan.toLocaleLowerCase();
+      const matchingPlans = plans.filter((plan) => {
+        const searchablePlan = `${plan.plan_name || ""} ${plan.plan_code || ""}`.toLocaleLowerCase();
+        return !planTerm || searchablePlan.includes(planTerm);
+      });
+
+      if (!filters.item) {
+        return matchingPlans.map((plan) => ({ ...plan, item_name: "計畫總額" }));
+      }
+
+      const detailFilters = {
+        select: "budget_plan_detail_id,budget_plan_id,row_no,item_code,item_name,item_label_original,branch_plan_name,expense_name,amount_text,amount,amount_unit,description",
+        order: "budget_plan_id.asc,row_no.asc"
+      };
+      const itemPattern = `ilike.${containsPattern(filters.item)}`;
+      const narrativeFields = ["description", "expected_results", "explanation", "other_notes"];
+      const [namedDetails, describedDetails, expenseDetails, ...planNarratives] = await Promise.all([
+        fetchAllRows("v_public_budget_plan_detail", {
+          ...detailFilters,
+          item_name: itemPattern
+        }, signal),
+        fetchAllRows("v_public_budget_plan_detail", {
+          ...detailFilters,
+          description: itemPattern
+        }, signal),
+        fetchAllRows("v_public_budget_plan_detail", {
+          ...detailFilters,
+          expense_name: itemPattern
+        }, signal),
+        ...narrativeFields.map((field) => {
+          const narrativeFilters = {
+            select: `budget_plan_id,${field}`,
+            fiscal_year: `eq.${filters.year}`,
+            [field]: itemPattern
+          };
+          if (filters.agency) {
+            narrativeFilters.agency_name = `ilike.${containsPattern(filters.agency)}`;
+          }
+          return fetchAllRows("v_public_budget_plan", narrativeFilters, signal);
+        })
+      ]);
+      const matchingDetails = [...new Map(
+      [...namedDetails, ...describedDetails, ...expenseDetails]
+          .map((detail) => [String(detail.budget_plan_detail_id), detail])
+      ).values()];
+      const plansById = new Map(matchingPlans.map((plan) => [String(plan.budget_plan_id), plan]));
+      const detailMatches = matchingDetails.filter((detail) =>
+        plansById.has(String(detail.budget_plan_id))
+      );
+      const planIdsNeedingDescription = [...new Set(
+        detailMatches
+          .filter((detail) => !String(detail.description || "").trim())
+          .map((detail) => Number(detail.budget_plan_id))
+          .filter(Number.isSafeInteger)
+      )];
+      const planNarrativeRequests = [];
+      for (let offset = 0; offset < planIdsNeedingDescription.length; offset += 100) {
+        const planIds = planIdsNeedingDescription.slice(offset, offset + 100);
+        planNarrativeRequests.push(fetchAllRows("v_public_budget_plan", {
+          select: "budget_plan_id,description,expected_results,explanation,other_notes",
+          fiscal_year: `eq.${filters.year}`,
+          budget_plan_id: `in.(${planIds.join(",")})`
+        }, signal));
+      }
+      const planIdsWithDetails = [...new Set(
+        detailMatches
+          .map((detail) => Number(detail.budget_plan_id))
+          .filter(Number.isSafeInteger)
+      )];
+      const contextDetailRequests = [];
+      for (let offset = 0; offset < planIdsWithDetails.length; offset += 100) {
+        const planIds = planIdsWithDetails.slice(offset, offset + 100);
+        contextDetailRequests.push(fetchAllRows("v_public_budget_plan_detail", {
+          select: "budget_plan_detail_id,budget_plan_id,row_no,item_code,item_name,branch_plan_name",
+          budget_plan_id: `in.(${planIds.join(",")})`,
+          order: "budget_plan_id.asc,row_no.asc"
+        }, signal));
+      }
+      const commissionedExpenseDetails = detailMatches.filter(isCommissionedExpense);
+      const commissionedRowsRequest = commissionedExpenseDetails.length > 0
+        ? fetchAllRows("v_public_commissioned_analysis_row", {
+          select: "commissioned_analysis_report_id,agency_code,agency_name,amount_unit,source_record_no,parent_source_record_no,row_type,project_label,project_period_source,total_amount_text,total_amount",
+          fiscal_year: `eq.${filters.year}`,
+          row_type: "in.(group,project)",
+          order: "agency_code.asc,commissioned_analysis_report_id.asc,source_record_no.asc"
+        }, signal)
+        : Promise.resolve([]);
+      const [planNarrativeBatches, contextDetailBatches, commissionedRows] = await Promise.all([
+        Promise.all(planNarrativeRequests),
+        Promise.all(contextDetailRequests),
+        commissionedRowsRequest
+      ]);
+      const planNarrativeRows = planNarrativeBatches.flat();
+      const firstLevelItemNames = buildFirstLevelItemNames(contextDetailBatches.flat());
+      const planDescriptions = new Map(planNarrativeRows.map((plan) => [
+        String(plan.budget_plan_id),
+        [plan.description, plan.expected_results, plan.explanation, plan.other_notes]
+          .filter((value) => String(value || "").trim())
+          .join("\n\n")
+      ]));
+      const narrativeResults = new Map();
+
+      planNarratives.forEach((matches, fieldIndex) => {
+        const field = narrativeFields[fieldIndex];
+        for (const match of matches) {
+          const planId = String(match.budget_plan_id);
+          const plan = plansById.get(planId);
+          if (!plan) {
+            continue;
+          }
+          const result = narrativeResults.get(planId) || {
+            ...plan,
+            item_name: "計畫說明",
+            description: "",
+            showFullDescription: true
+          };
+          result.description = [result.description, match[field]].filter(Boolean).join("\n\n");
+          narrativeResults.set(planId, result);
+        }
+      });
+
+      const detailResults = detailMatches.map((detail) => {
+        const planId = String(detail.budget_plan_id);
+        const plan = plansById.get(planId);
+        const commissionedMatch = isCommissionedExpense(detail)
+          ? matchCommissionedGroup(plan, commissionedRows)
+          : null;
+        return {
+          ...plan,
+          item_name: getBudgetItemDisplayName(detail, firstLevelItemNames),
+          amount_text: detail.amount_text,
+          amount: detail.amount,
+          amount_unit: detail.amount_unit,
+          description: detail.description || planDescriptions.get(planId) || "",
+          showFullDescription: Boolean(String(detail.description || "").trim()),
+          commissionedReport: commissionedMatch?.report || null,
+          commissionedMessage: commissionedMatch?.message || "",
+          commissionedProjects: commissionedMatch?.group
+            ? matchingCommissionedProjects(detail, plan, commissionedRows, commissionedMatch.group)
+            : [],
+          overseasTrip: overseasTripTarget(detail, plan)
+        };
+      });
+
+      return [...narrativeResults.values(), ...detailResults];
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!supabaseUrl || !publishableKey) {
+        setStatus("尚未設定 Supabase", "請先在 supabase-config.js 填入專案網址與 publishable key，再重新查詢。");
+        resultsCount.textContent = "尚未連線";
+        showEmpty("等待 Supabase 設定", "設定完成後，查詢結果會顯示在這裡。");
+        return;
+      }
+
+      const values = new FormData(form);
+      const filters = {
+        year: String(values.get("fiscal_year") || "116"),
+        agency: String(values.get("agency") || "").trim(),
+        plan: String(values.get("plan") || "").trim(),
+        item: String(values.get("item") || "").trim()
+      };
+
+      if (activeController) {
+        activeController.abort();
+      }
+      if (commissionedController) {
+        commissionedController.abort();
+        commissionedController = null;
+      }
+      activeController = new AbortController();
+      const controller = activeController;
+      submitButton.disabled = true;
+      resultsCount.textContent = "查詢中…";
+      setStatus("正在查詢", `正在向 Supabase 查詢民國 ${filters.year} 年資料。`);
+      showEmpty("正在載入資料", "請稍候，正在讀取符合條件的預算資料。");
+
+      try {
+        const rows = await searchBudget(filters, controller.signal);
+        renderRows(rows, rows.length, [filters.agency, filters.plan, filters.item], filters.item);
+        setStatus("查詢完成", `民國 ${filters.year} 年的查詢已完成；金額依來源單位呈現，未進行單位換算。`);
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+        resultsCount.textContent = "查詢失敗";
+        showEmpty("無法完成查詢", error.message || "請檢查 Supabase 設定與網路連線。");
+        setStatus("查詢失敗", error.message || "請檢查 Supabase 設定與網路連線。");
+      } finally {
+        if (activeController === controller) {
+          activeController = null;
+          submitButton.disabled = false;
+        }
+      }
+    });
+
+    document.querySelectorAll("[data-query]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const query = button.dataset.query;
+        if (query === "行政院") {
+          document.querySelector("#agency").value = query;
+        } else if (query === "一般行政") {
+          document.querySelector("#plan").value = query;
+        } else {
+          document.querySelector("#item").value = query;
+        }
+        document.querySelector(query === "行政院" ? "#agency" : query === "一般行政" ? "#plan" : "#item").focus();
+      });
+    });
+
+    form.addEventListener("reset", () => {
+      if (activeController) {
+        activeController.abort();
+        activeController = null;
+      }
+      resultsCount.textContent = "尚未查詢";
+      resultsBody.replaceChildren();
+      resultsTable.hidden = true;
+      emptyState.hidden = false;
+      emptyTitle.textContent = "準備好開始查詢";
+      emptyCopy.textContent = "輸入機關、計畫或支出項目，送出後會在此顯示查詢結果。";
+      submitButton.disabled = false;
+      setStatus(
+        supabaseUrl && publishableKey ? "Supabase 已設定" : "尚未設定 Supabase",
+        supabaseUrl && publishableKey
+          ? "輸入查詢條件後，頁面會透過唯讀公開檢視表查詢資料。"
+          : "請先在 supabase-config.js 填入專案網址與 publishable key。"
+      );
+    });
+
+    if (supabaseUrl && publishableKey) {
+      document.querySelector("#connection-badge").textContent = "Supabase 已設定";
+      setStatus("Supabase 已設定", "輸入查詢條件後，頁面會透過唯讀公開檢視表查詢資料。");
+    }
+  </script>
+</body>
+</html>
