@@ -749,7 +749,7 @@
         <span>中央政府總預算・歲出計畫</span>
       </span>
     </a>
-    <span class="prototype-badge" id="connection-badge">Supabase 尚未設定</span>
+    <span class="prototype-badge" id="connection-badge">查詢服務尚未就緒</span>
   </header>
 
   <main class="page-shell">
@@ -779,17 +779,22 @@
           <div class="field">
             <label for="agency">機關名稱</label>
             <input id="agency" name="agency" type="search" autocomplete="organization" maxlength="100"
-                   placeholder="例如：行政院、教育部">
+                   placeholder="例如：行政院, 教育部">
           </div>
           <div class="field">
             <label for="plan">計畫名稱或編號</label>
             <input id="plan" name="plan" type="search" maxlength="100"
-                   placeholder="例如：一般行政">
+                   placeholder="例如：一般行政, 社會發展">
           </div>
           <div class="field">
-            <label for="item">支出項目／關鍵字</label>
+            <label for="item">支出項目</label>
             <input id="item" name="item" type="search" maxlength="100"
-                     placeholder="例如：委辦費、人事費、金門大學">
+                   placeholder="例如：委辦費, 人事費">
+          </div>
+          <div class="field">
+            <label for="keyword">關鍵字</label>
+            <input id="keyword" name="keyword" type="search" maxlength="100"
+                   placeholder="例如：金門大學, 資訊系統">
           </div>
         </div>
 
@@ -820,7 +825,7 @@
         <span class="notice-icon" aria-hidden="true">i</span>
         <div>
           <strong id="status-title">目前是頁面原型</strong>
-          <p id="status-message">設定 Supabase 專案網址與 publishable key 後，即可查詢已發布的預算資料。</p>
+          <p id="status-message">查詢服務尚未完成設定，暫時無法查詢預算資料。</p>
         </div>
       </div>
       <div class="empty-state" id="empty-state">
@@ -861,17 +866,12 @@
 
     <div class="integration-note">
       <span>金額與單位應依原始預算書表呈現；年度為民國年。</span>
-      <span>
-        <a href="postgresql-schema.sql">資料庫結構</a>
-        · <a href="supabase-setup.sql">Supabase 權限設定</a>
-      </span>
     </div>
   </main>
 
   <footer>
     <div class="page-shell footer-inner">
       <span>預算好好查｜介面原型</span>
-      <span>透過 Supabase Data API 查詢；瀏覽器不直接連線 PostgreSQL。</span>
     </div>
   </footer>
 
@@ -879,6 +879,7 @@
   <script>
     const PAGE_SIZE = 500;
     const MAX_DISPLAY_ROWS = 100;
+    const QUERY_ERROR_MESSAGE = "目前無法取得資料，請稍後再試；若問題持續，請聯絡網站管理員。";
     const config = window.BUDGET_SUPABASE_CONFIG || {};
     const supabaseUrl = String(config.projectUrl || "").replace(/\/+$/, "");
     const publishableKey = String(config.publishableKey || "").trim();
@@ -913,6 +914,15 @@
 
     function containsPattern(value) {
       return `*${value.trim()}*`;
+    }
+
+    function splitSearchTerms(value) {
+      return [...new Set(
+        String(value || "")
+          .split(/[,，]/)
+          .map((term) => term.trim())
+          .filter(Boolean)
+      )];
     }
 
     function normalizeCommissionedGroupLabel(value, planCode) {
@@ -1047,24 +1057,12 @@
         });
 
         if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error("HTTP 401：Supabase 未接受 API key。請確認 publishable key 正確，且與專案網址屬於同一個 Supabase 專案。");
-          }
-          if (response.status === 403) {
-            throw new Error("HTTP 403：API 角色缺少讀取權限。請重新執行 supabase-setup.sql，確認唯讀檢視表授權與 RLS policy 已建立。");
-          }
-          if (response.status === 406) {
-            throw new Error("HTTP 406：Supabase API 尚未公開 public_budget schema，或未重新載入 API schema。");
-          }
-          if (response.status === 404) {
-            throw new Error("找不到查詢檢視表，請確認已建立資料表、公開檢視表及 API schema 設定。");
-          }
-          throw new Error(`Supabase 查詢失敗（HTTP ${response.status}）。`);
+          throw new Error(QUERY_ERROR_MESSAGE);
         }
 
         const page = await response.json();
         if (!Array.isArray(page)) {
-          throw new Error("Supabase 回傳格式不正確，預期取得資料列清單。");
+          throw new Error(QUERY_ERROR_MESSAGE);
         }
         rows.push(...page);
         if (page.length < PAGE_SIZE) {
@@ -1274,12 +1272,15 @@
         : formatPlainDescription(description);
     }
 
-    function matchingDescriptionLines(content, keyword) {
-      const searchTerm = keyword.toLocaleLowerCase();
+    function matchingDescriptionLines(content, keywords) {
+      const searchTerms = keywords.map((keyword) => keyword.toLocaleLowerCase());
       return [...new Set(content
         .split(/\r?\n/)
         .map((line) => line.trim())
-        .filter((line) => line && line.toLocaleLowerCase().includes(searchTerm)))]
+        .filter((line) => {
+          const normalizedLine = line.toLocaleLowerCase();
+          return line && searchTerms.some((term) => normalizedLine.includes(term));
+        }))]
         .join("\n");
     }
 
@@ -1289,7 +1290,7 @@
       const hasDescription = description != null && String(description).trim() !== "";
       let hasVisibleContent = false;
 
-      if (itemKeyword && hasDescription) {
+      if (itemKeyword.length > 0 && hasDescription) {
         const matchingLines = matchingDescriptionLines(
           getDescriptionText(description, agencyName),
           itemKeyword
@@ -1641,7 +1642,7 @@
         }
         descriptionDialogContent.replaceChildren();
         const message = document.createElement("p");
-        message.textContent = error.message || "無法載入委辦經費明細，請確認 Supabase 設定與網路連線。";
+        message.textContent = QUERY_ERROR_MESSAGE;
         descriptionDialogContent.append(message);
       } finally {
         if (commissionedController === controller) {
@@ -1878,7 +1879,7 @@
         }
         descriptionDialogContent.replaceChildren();
         const message = document.createElement("p");
-        message.textContent = error.message || "無法載入出國計畫，請確認 Supabase 設定與網路連線。";
+        message.textContent = QUERY_ERROR_MESSAGE;
         descriptionDialogContent.append(message);
       } finally {
         if (commissionedController === controller) {
@@ -1925,23 +1926,33 @@
     }
 
     async function searchBudget(filters, signal) {
-      const planFilters = {
+      const basePlanFilters = {
         select: "budget_plan_id,fiscal_year,agency_code,agency_name,plan_code,plan_name,amount_text,amount,amount_unit",
         fiscal_year: `eq.${filters.year}`,
         order: "agency_name.asc,plan_name.asc"
       };
-      if (filters.agency) {
-        planFilters.agency_name = `ilike.${containsPattern(filters.agency)}`;
-      }
-
-      const plans = await fetchAllRows("v_public_budget_plan", planFilters, signal);
-      const planTerm = filters.plan.toLocaleLowerCase();
+      const agencyRequests = filters.agency.map((agency) => fetchAllRows(
+        "v_public_budget_plan",
+        {
+          ...basePlanFilters,
+          agency_name: `ilike.${containsPattern(agency)}`
+        },
+        signal
+      ));
+      const planBatches = agencyRequests.length > 0
+        ? await Promise.all(agencyRequests)
+        : [await fetchAllRows("v_public_budget_plan", basePlanFilters, signal)];
+      const plans = [...new Map(
+        planBatches.flat().map((plan) => [String(plan.budget_plan_id), plan])
+      ).values()];
       const matchingPlans = plans.filter((plan) => {
         const searchablePlan = `${plan.plan_name || ""} ${plan.plan_code || ""}`.toLocaleLowerCase();
-        return !planTerm || searchablePlan.includes(planTerm);
+        return filters.plan.length === 0 || filters.plan.some((term) =>
+          searchablePlan.includes(term.toLocaleLowerCase())
+        );
       });
 
-      if (!filters.item) {
+      if (filters.item.length === 0 && filters.keyword.length === 0) {
         return matchingPlans.map((plan) => ({ ...plan, item_name: "計畫總額" }));
       }
 
@@ -1949,37 +1960,68 @@
         select: "budget_plan_detail_id,budget_plan_id,row_no,item_code,item_name,item_label_original,branch_plan_name,expense_name,amount_text,amount,amount_unit,description",
         order: "budget_plan_id.asc,row_no.asc"
       };
-      const itemPattern = `ilike.${containsPattern(filters.item)}`;
+      const itemDetailRequests = filters.item.flatMap((item) => {
+        const pattern = `ilike.${containsPattern(item)}`;
+        return ["item_name", "expense_name"].map((field) =>
+          fetchAllRows("v_public_budget_plan_detail", {
+            ...detailFilters,
+            [field]: pattern
+          }, signal)
+        );
+      });
+      const keywordDetailRequests = filters.keyword.flatMap((keyword) => {
+        const pattern = `ilike.${containsPattern(keyword)}`;
+        return ["item_name", "description", "expense_name"].map((field) =>
+          fetchAllRows("v_public_budget_plan_detail", {
+            ...detailFilters,
+            [field]: pattern
+          }, signal)
+        );
+      });
       const narrativeFields = ["description", "expected_results", "explanation", "other_notes"];
-      const [namedDetails, describedDetails, expenseDetails, ...planNarratives] = await Promise.all([
-        fetchAllRows("v_public_budget_plan_detail", {
-          ...detailFilters,
-          item_name: itemPattern
-        }, signal),
-        fetchAllRows("v_public_budget_plan_detail", {
-          ...detailFilters,
-          description: itemPattern
-        }, signal),
-        fetchAllRows("v_public_budget_plan_detail", {
-          ...detailFilters,
-          expense_name: itemPattern
-        }, signal),
-        ...narrativeFields.map((field) => {
+      const agencies = filters.agency.length > 0 ? filters.agency : [""];
+      const narrativeRequests = narrativeFields.map((field) =>
+        filters.keyword.flatMap((keyword) => agencies.map((agency) => {
           const narrativeFilters = {
             select: `budget_plan_id,${field}`,
             fiscal_year: `eq.${filters.year}`,
-            [field]: itemPattern
+            [field]: `ilike.${containsPattern(keyword)}`
           };
-          if (filters.agency) {
-            narrativeFilters.agency_name = `ilike.${containsPattern(filters.agency)}`;
+          if (agency) {
+            narrativeFilters.agency_name = `ilike.${containsPattern(agency)}`;
           }
           return fetchAllRows("v_public_budget_plan", narrativeFilters, signal);
-        })
+        }))
+      );
+      const [itemDetailBatches, keywordDetailBatches, narrativeBatches] = await Promise.all([
+        Promise.all(itemDetailRequests),
+        Promise.all(keywordDetailRequests),
+        Promise.all(narrativeRequests.map((requests) => Promise.all(requests)))
       ]);
-      const matchingDetails = [...new Map(
-      [...namedDetails, ...describedDetails, ...expenseDetails]
-          .map((detail) => [String(detail.budget_plan_detail_id), detail])
+      const planNarratives = narrativeBatches.map((batches, fieldIndex) => {
+        const field = narrativeFields[fieldIndex];
+        return [...new Map(batches.flat().map((row) => [
+          `${row.budget_plan_id}:${row[field] || ""}`,
+          row
+        ])).values()];
+      });
+      const uniqueDetails = (batches) => [...new Map(
+        batches.flat().map((detail) => [String(detail.budget_plan_detail_id), detail])
       ).values()];
+      const itemDetails = uniqueDetails(itemDetailBatches);
+      const keywordDetails = uniqueDetails(keywordDetailBatches);
+      const narrativePlanIds = new Set(planNarratives.flatMap((rows) =>
+        rows.map((row) => String(row.budget_plan_id))
+      ));
+      const keywordDetailIds = new Set(keywordDetails.map((detail) =>
+        String(detail.budget_plan_detail_id)
+      ));
+      const matchingDetails = filters.item.length > 0 && filters.keyword.length > 0
+        ? itemDetails.filter((detail) =>
+          keywordDetailIds.has(String(detail.budget_plan_detail_id))
+          || narrativePlanIds.has(String(detail.budget_plan_id))
+        )
+        : filters.item.length > 0 ? itemDetails : keywordDetails;
       const plansById = new Map(matchingPlans.map((plan) => [String(plan.budget_plan_id), plan]));
       const detailMatches = matchingDetails.filter((detail) =>
         plansById.has(String(detail.budget_plan_id))
@@ -2036,11 +2078,17 @@
           .join("\n\n")
       ]));
       const narrativeResults = new Map();
+      const detailMatchPlanIds = new Set(detailMatches.map((detail) =>
+        String(detail.budget_plan_id)
+      ));
 
       planNarratives.forEach((matches, fieldIndex) => {
         const field = narrativeFields[fieldIndex];
         for (const match of matches) {
           const planId = String(match.budget_plan_id);
+          if (filters.item.length > 0 && !detailMatchPlanIds.has(planId)) {
+            continue;
+          }
           const plan = plansById.get(planId);
           if (!plan) {
             continue;
@@ -2085,18 +2133,19 @@
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!supabaseUrl || !publishableKey) {
-        setStatus("尚未設定 Supabase", "請先在 supabase-config.js 填入專案網址與 publishable key，再重新查詢。");
-        resultsCount.textContent = "尚未連線";
-        showEmpty("等待 Supabase 設定", "設定完成後，查詢結果會顯示在這裡。");
+        setStatus("查詢服務尚未就緒", "目前無法查詢資料，請稍後再試；若問題持續，請聯絡網站管理員。");
+        resultsCount.textContent = "暫時無法查詢";
+        showEmpty("查詢服務尚未就緒", "請稍後再試；若問題持續，請聯絡網站管理員。");
         return;
       }
 
       const values = new FormData(form);
       const filters = {
         year: String(values.get("fiscal_year") || "116"),
-        agency: String(values.get("agency") || "").trim(),
-        plan: String(values.get("plan") || "").trim(),
-        item: String(values.get("item") || "").trim()
+        agency: splitSearchTerms(values.get("agency")),
+        plan: splitSearchTerms(values.get("plan")),
+        item: splitSearchTerms(values.get("item")),
+        keyword: splitSearchTerms(values.get("keyword"))
       };
 
       if (activeController) {
@@ -2110,20 +2159,25 @@
       const controller = activeController;
       submitButton.disabled = true;
       resultsCount.textContent = "查詢中…";
-      setStatus("正在查詢", `正在向 Supabase 查詢民國 ${filters.year} 年資料。`);
+      setStatus("正在查詢", `正在查詢民國 ${filters.year} 年資料。`);
       showEmpty("正在載入資料", "請稍候，正在讀取符合條件的預算資料。");
 
       try {
         const rows = await searchBudget(filters, controller.signal);
-        renderRows(rows, rows.length, [filters.agency, filters.plan, filters.item], filters.item);
+        renderRows(
+          rows,
+          rows.length,
+          [...filters.agency, ...filters.plan, ...filters.item, ...filters.keyword],
+          filters.keyword
+        );
         setStatus("查詢完成", `民國 ${filters.year} 年的查詢已完成；金額依來源單位呈現，未進行單位換算。`);
       } catch (error) {
         if (error.name === "AbortError") {
           return;
         }
         resultsCount.textContent = "查詢失敗";
-        showEmpty("無法完成查詢", error.message || "請檢查 Supabase 設定與網路連線。");
-        setStatus("查詢失敗", error.message || "請檢查 Supabase 設定與網路連線。");
+        showEmpty("無法完成查詢", QUERY_ERROR_MESSAGE);
+        setStatus("查詢失敗", QUERY_ERROR_MESSAGE);
       } finally {
         if (activeController === controller) {
           activeController = null;
@@ -2159,16 +2213,16 @@
       emptyCopy.textContent = "輸入機關、計畫或支出項目，送出後會在此顯示查詢結果。";
       submitButton.disabled = false;
       setStatus(
-        supabaseUrl && publishableKey ? "Supabase 已設定" : "尚未設定 Supabase",
+        supabaseUrl && publishableKey ? "查詢服務已就緒" : "查詢服務尚未就緒",
         supabaseUrl && publishableKey
-          ? "輸入查詢條件後，頁面會透過唯讀公開檢視表查詢資料。"
-          : "請先在 supabase-config.js 填入專案網址與 publishable key。"
+          ? "輸入查詢條件後，即可查詢預算資料。"
+          : "目前無法查詢資料，請稍後再試；若問題持續，請聯絡網站管理員。"
       );
     });
 
     if (supabaseUrl && publishableKey) {
-      document.querySelector("#connection-badge").textContent = "Supabase 已設定";
-      setStatus("Supabase 已設定", "輸入查詢條件後，頁面會透過唯讀公開檢視表查詢資料。");
+      document.querySelector("#connection-badge").textContent = "查詢服務已就緒";
+      setStatus("查詢服務已就緒", "輸入查詢條件後，即可查詢預算資料。");
     }
   </script>
 </body>
